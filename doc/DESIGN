@@ -1,0 +1,31 @@
+						   ..::[KEY DESIGN NOTES]::..
+[features]
+- extensible
+- scriptable
+- configurable
+- simple
+
+[core]
+- game screen
+- inventory
+- player status
+- player health
+- item interaction
+- key bindings/help
+- options
+- eXamine
+
+[elements]
+- container
+- dialog box
+- static text
+- menubar
+- list
+- menu entries
+- scrollbar
+- tabs
+- input
+- slider
+- form
+- graph (?)
+

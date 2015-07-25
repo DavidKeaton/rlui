@@ -39,4 +39,5 @@
 obj/
 objwin/
 *.old
+.old/
 
