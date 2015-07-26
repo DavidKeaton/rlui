@@ -2,9 +2,15 @@
 #include "enums.h"
 
 #include <utility>
+#include <string>
+#include <array>
 
 // class: window {{{1
 // initializers {{{2
+window::window(void)
+{
+}
+
 window::window(int w, int h, int x, int y)
 {
     if(!set_size(w, h)) {
@@ -116,4 +122,70 @@ void window::refresh(void)
 }
 // }}}2
 // }}}1
+// class: ui_base {{{1
+void ui_base::sync(void)
+{
+}
 
+void ui_base::refresh(void)
+{
+}
+// }}}1
+// class: ui_text {{{1
+// initializers {{{2
+ui_text::ui_text(void)
+{
+}
+
+ui_text::~ui_text(void)
+{
+}
+
+void ui_text::init(void)
+{
+}
+// }}}2
+// internal {{{2
+void ui_text::prettify(void)
+{
+    // break the text up between either double spaces or newline
+    static const std::array<char[4], 2> tokens = {"\n", "  "}; // TODO: make me OS independent!
+    // early exit if no text to beautify
+    if(text.empty()) {
+        return;
+    }
+    pretty_text.clear();
+    // check over the string one token at a time
+    for(const auto &elem : tokens) {
+        for(size_t pos = 0; pos < text.length();) {
+            // save the position, for a better Earth!
+            size_t prior = pos;
+            pos = text.find(elem, pos);
+            // bail out if no token found
+            if(pos == std::string::npos) {
+                break;
+            }
+            // now, simply push back the portion of the text!
+            int len = pos - prior;
+            // point `pos' to the next character
+            pretty_text.push_back(text.substr(pos++, len));
+        }
+    }
+    // TODO: apply colorizing options here! (or maybe make its own function)
+}
+// }}}2
+// getters {{{2
+// }}}2
+// setters {{{2
+void ui_text::set_text(const std::string &text)
+{
+    this->text = text;
+}
+
+void ui_text::clear_text(void)
+{
+    text.clear();
+    pretty_text.clear();
+}
+// }}}2
+// }}}1
