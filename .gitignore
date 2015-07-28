@@ -22,6 +22,10 @@
 *.a
 *.lib
 
+# Output
+obj/
+objwin/
+
 # Executables
 *.exe
 *.out
@@ -35,9 +39,10 @@
 # astyle
 *.orig
 
+# environment
+*.env
+
 # etc
-obj/
-objwin/
 *.old
 .old/
 
