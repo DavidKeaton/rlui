@@ -30,8 +30,8 @@ struct coords {
         }
 };
 
-typedef struct coords<int> point;
 typedef struct coords<unsigned int> upoint;
+typedef struct coords<int>          point;
 
 
 
