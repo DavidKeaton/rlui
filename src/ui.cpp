@@ -1,9 +1,15 @@
 #include "ui.h"
 #include "enums.h"
+#include "ui_event.h"
 
 #include <utility>
 #include <string>
 #include <array>
+#include <climits>
+
+
+/* null event type, for use when no events are available */
+const static ui_event null_event = {NUM_EVENTS};
 
 // class: window {{{1
 // initializers {{{2
@@ -123,8 +129,44 @@ void window::refresh(void)
 // }}}2
 // }}}1
 // class: ui_base {{{1
+void ui_base::process_events(void)
+{
+    // gather events, and add them to the queue appropriately
+}
+
+const ui_event &ui_base::peek_event(void)
+{
+    return (!events.empty()) ? events.front() : null_event;
+}
+
 void ui_base::sync(void)
 {
+}
+
+int ui_base::run(const ui_function &func)
+{
+    int rc = INT_MIN;
+    do {
+        // gather input/ui events
+        process_events();
+        while(!events.empty()) {
+            // find the userdata for this function, and pass it if there
+            auto iter = userdata.find(events.front().type);
+            // pass the event along to the user function
+            void *data = (iter != userdata.end()) ?
+                static_cast<void*>(iter->second) : nullptr;
+            rc = func(events.front(), data);
+            // delete the event, and continue
+            events.pop();
+        }
+    } while(events.front().type != UI_ON_EXIT);
+    return rc;
+}
+
+int ui_base::operator()(const ui_function &func)
+{
+    // TODO: make this do something
+    return run(func);
 }
 
 void ui_base::refresh(void)
@@ -171,7 +213,8 @@ void ui_text::prettify(void)
             pretty_text.push_back(text.substr(pos++, len));
         }
     }
-    // TODO: apply colorizing options here! (or maybe make its own function)
+    // TODO: apply colorizing/formatting options here!
+    // TODO: (or maybe make it its own function)
 }
 // }}}2
 // getters {{{2
@@ -188,4 +231,9 @@ void ui_text::clear_text(void)
     pretty_text.clear();
 }
 // }}}2
+// }}}1
+// class: ui_button {{{1
+void ui_button::on_click(const ui_callback &func)
+{
+}
 // }}}1

@@ -2,6 +2,7 @@
 #define  UI_INC
 
 #include "enums.h"
+#include "ui_event.h"
 
 #include <ncurses.h>
 
@@ -11,22 +12,35 @@
 #include <vector>
 #include <functional>
 #include <map>
-#include <queue>
 #include <list>
+#include <queue>
 
 
 /* used for ui callbacks */
 class ui_base;
 typedef std::function<void(const ui_base *ui, void *ptr)> ui_callback;
 
-/* event types that can invoke a callback */
-enum ui_event {
-    UI_ON_ERROR = -1,
-    UI_ON_EXIT  =  0,
-    UI_ON_FINISH,
-    UI_ON_CLICK,
-    UI_ON_KEYSTROKE,
+/* template for custom routines passed to `ui_base' */
+typedef std::function<int(const ui_event &event, void *userdata)> ui_function;
+
+/* error codes for the ui */
+enum ui_errno {
+    UI_EFATAL = 0,
+    UI_EFILE,
+    UI_EBADARG,
+    NUM_ERRNO
 };
+
+/* error info struct */
+struct ui_error {
+    /* error code, from above enum */
+    const ui_errno errno;
+    /* error message text */
+    const std::string msg;
+};
+
+// TODO: add static pairing of error code + error message
+// TODO: (probably in a TU)
 
 /*** class: window {{{1
  * Specialized class to handle details and memory for curses windows
@@ -97,46 +111,39 @@ class ui_base
     private:
         /* the queue of events, as the name implies */
         std::queue<ui_event> events;
-        /* callback function list per `ui_event' */
-        std::map<ui_event, std::list<ui_callback *>> cb;
-        /* userdata to be sent with `ui_event' type */
-        std::map<ui_event, std::list<void *>> ud;
-
-        /* get the next ui_event to process,
-         * and removes event from the queue */
-        ui_event next_event(void);
+        /* userdata associated to specific `ui_event_type's */
+        std::map<ui_event_type, void*> userdata;
     protected:
         /* specialized curses window */
 		std::unique_ptr<window> win;
-// callback handling
-        /* optional callback[s] for the element
-         * these are executed on conditions from
-         * `ui_event' enum at top of page */
-        void register_callback(ui_event event, const ui_callback &func);
-        /* remove the latest ui_event callback from the list */
-        void remove_callback(ui_event event);
 // events handling
-        /* handle events and their respective callbacks */
+        /* handle processing events and adding them to the queue */
         void process_events(void);
-        /* add the event to the queue */
-        void add_event(ui_event event);
-        /* remove the event from the queue */
-        void rem_event(ui_event event);
-        /* see the list of events, without removing them */
-        std::vector<ui_event> peek_events(void);
+        /* see the next event, without removing it */
+        const ui_event &peek_event(void);
 // display
         /* synchronize the internals with what is displayed 
          * this is where you gather the data and format it
          * to be displayed by refresh */
         virtual void sync(void);
+        /* the `main()' of the ui element, handles the internals of
+         * the ui class, preparing it for the next ui_function call */
+        virtual int run(const ui_function &func);
 	public:
         ui_base();
         /* explicitly declare window attributes */
         ui_base(int w, int h, int x, int y);
+        virtual ~ui_base();
+
+        /* invoke the ui element to execute its standard routine */
+        virtual int operator()(const ui_function &func);
         /* redraw the element */
         virtual void refresh(void);
+        /* set the userdata for the type of event */
+        void set_userdata(const ui_event_type type, void *userdata)
+            {this->userdata[type] = userdata;}
 }; // }}}1
-/*** class: ui_text
+/*** class: ui_text {{{1
  * Class used to store information about any text for an ui
  * element. Also includes a way to prettify the text as well.
  ***/
@@ -176,13 +183,10 @@ class ui_text
  ***/
 class ui_button : public ui_base, public ui_text
 {
-    private:
-        ui_text label;
     public:
         /* callback to execute when button is selected 
          * convenience for adding callback to event */
         void on_click(const ui_callback &func);
-        /* set text of button */
 }; // }}}1
 /*** class: ui_dialog {{{1
  * Displays a dialog box, with selected options on the bottom.
